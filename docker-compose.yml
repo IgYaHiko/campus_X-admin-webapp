@@ -1,0 +1,15 @@
+services:
+  admin:
+    build:
+      context: .
+      target: development
+    container_name: campusfix-admin
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    command: npm run dev -- -p 3001
