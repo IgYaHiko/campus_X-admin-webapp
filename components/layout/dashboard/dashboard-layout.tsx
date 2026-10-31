@@ -18,7 +18,7 @@ export function DashboardLayout({
 }) {
   return (
     <SidebarProvider
-      className="!h-svh !min-h-svh w-full items-stretch"
+      className="h-svh min-h-0 w-full overflow-hidden"
       style={
         {
           "--sidebar-width": "260px",
@@ -26,12 +26,18 @@ export function DashboardLayout({
         } as React.CSSProperties
       }
     >
+      {/* Fixed sidebar */}
       <DashboardSidebar />
 
-      <SidebarInset className="min-h-0 min-w-0 flex-1">
-        <DashboardNavbar />
+      {/* Right application area */}
+      <SidebarInset className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Navbar stays fixed */}
+        <div className="shrink-0">
+          <DashboardNavbar />
+        </div>
 
-        <main className="min-w-0 w-full flex-1">
+        {/* Only this section scrolls */}
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <div className="mx-auto w-full max-w-[1600px] space-y-7 p-4 sm:p-6 lg:p-8">
             {children}
           </div>
