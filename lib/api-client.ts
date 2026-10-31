@@ -43,3 +43,88 @@ export async function registerAdminApi(data: any) {
 
   return json;
 }
+
+
+// ---------- ADMIN DATA FETCHING ----------
+
+export async function getSystemStatsApi() {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/reports/system`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch stats");
+  return json.data; 
+}
+
+export async function getCategoriesApi() {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/categories`, {
+    headers: { Authorization: `Bearer ${token}` }, // Admin token
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch categories");
+  return json.data;
+}
+
+export async function createCategoryApi(data: any) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/categories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to create category");
+  return json;
+}
+
+export async function getDepartmentsApi() {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/departments`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch departments");
+  return json.data;
+}
+// ---------- STAFF ----------
+export async function getStaffApi() {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/staff`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch staff");
+  return json.data;
+}
+
+// ---------- COMPLAINTS ----------
+export async function getAllComplaintsApi(query = "") {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/complaints${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch complaints");
+  return json; // { success, data, pagination }
+}
+
+export async function assignComplaintApi(complaintId: number, staffEmail: string) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/complaints/${complaintId}/assign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    // We send the staffEmail. The backend ignores the adminEmail and uses the token's email.
+    body: JSON.stringify({ staffEmail, adminEmail: "placeholder" }), 
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to assign complaint");
+  return json;
+}

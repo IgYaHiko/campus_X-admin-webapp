@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
       }
 
       login(res.token, res.user);
-      router.push("/dashboard");
+      router.push("/admin/dashboard");
     } catch (err: unknown) {
       setError(
         err instanceof Error
