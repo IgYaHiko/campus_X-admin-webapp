@@ -128,3 +128,33 @@ export async function assignComplaintApi(complaintId: number, staffEmail: string
   if (!res.ok) throw new Error(json.message || "Failed to assign complaint");
   return json;
 }
+
+
+
+export async function getAdminsApi() {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/staff/admins`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch admins");
+  return json.data;
+}
+
+
+// create department
+
+export async function createDepartmentApi(data: any) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/departments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to create department");
+  return json.data;
+}
