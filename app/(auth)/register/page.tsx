@@ -50,7 +50,7 @@ export default function AdminRegisterPage() {
       }
 
       login(res.token, res.user);
-      router.push("/dashboard");
+      router.push("/admin/dashboard");
     } catch (err: unknown) {
       setError(
         err instanceof Error

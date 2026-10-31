@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/context/authContext";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-providers";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -29,10 +30,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
     >
       <body className="min-h-full flex flex-col">
-        <Toaster/>
+        <ThemeProvider
+         attribute="class"
+          defaultTheme="dark"
+        >
+
+           <Toaster/>
         <AuthProvider>
           {children}
         </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
