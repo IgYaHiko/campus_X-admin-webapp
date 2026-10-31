@@ -3,13 +3,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getStaffApi } from "@/lib/api-client";
+import { getAdminsApi, getStaffApi } from "@/lib/api-client";
 
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +24,7 @@ import {
   ShieldCheck,
   AlertCircle,
   UserCog,
+  Building2,
 } from "lucide-react";
 
 // --------------------------------------------------
@@ -35,6 +32,13 @@ import {
 // --------------------------------------------------
 
 type StaffMember = {
+  id: number;
+  name: string;
+  email: string;
+  role?: string;
+};
+
+type Admin = {
   id: number;
   name: string;
   email: string;
@@ -54,7 +58,7 @@ function getRoleLabel(role?: string) {
 }
 
 function getInitials(name?: string) {
-  if (!name) return "ST";
+  if (!name) return "NA";
 
   return name
     .trim()
@@ -71,33 +75,39 @@ function getInitials(name?: string) {
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [admins, setAdmins] = useState<Admin[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   // --------------------------------------------------
-  // Fetch staff
+  // Fetch admins and staff together
   // --------------------------------------------------
 
-  const fetchStaff = useCallback(async () => {
+  const fetchDirectory = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const data = await getStaffApi();
+      const [staffData, adminData] = await Promise.all([
+        getStaffApi(),
+        getAdminsApi(),
+      ]);
 
-      setStaff(Array.isArray(data) ? data : []);
+      setStaff(Array.isArray(staffData) ? staffData : []);
+      setAdmins(Array.isArray(adminData) ? adminData : []);
     } catch (err) {
-      console.error("Failed to fetch staff:", err);
-      setError("Unable to load staff directory. Please try again.");
+      console.error("Failed to fetch directory:", err);
+      setError("Unable to load the personnel directory. Please try again.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchStaff();
-  }, [fetchStaff]);
+    fetchDirectory();
+  }, [fetchDirectory]);
 
   // --------------------------------------------------
   // Search
@@ -108,53 +118,65 @@ export default function StaffPage() {
 
     if (!query) return staff;
 
-    return staff.filter((member) => {
-      return (
-        member.name?.toLowerCase().includes(query) ||
-        member.email?.toLowerCase().includes(query) ||
-        member.role?.toLowerCase().includes(query)
-      );
-    });
+    return staff.filter((member) =>
+      [
+        member.name,
+        member.email,
+        member.role,
+      ].some((value) => value?.toLowerCase().includes(query))
+    );
   }, [staff, search]);
+
+  const filteredAdmins = useMemo(() => {
+    const query = search.toLowerCase().trim();
+
+    if (!query) return admins;
+
+    return admins.filter((admin) =>
+      [
+        admin.name,
+        admin.email,
+        admin.role,
+      ].some((value) => value?.toLowerCase().includes(query))
+    );
+  }, [admins, search]);
 
   // --------------------------------------------------
   // Statistics
   // --------------------------------------------------
 
-  const adminCount = staff.filter(
-    (member) => member.role?.toLowerCase() === "admin"
-  ).length;
-
-  const staffCount = staff.length - adminCount;
+  const totalPersonnel = staff.length + admins.length;
 
   // --------------------------------------------------
   // Render
   // --------------------------------------------------
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
+
       {/* Page Header */}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Staff Directory
+              Personnel
             </h1>
 
-            <span className="rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {staff.length}
-            </span>
+            <Badge variant="outline">
+              {totalPersonnel} members
+            </Badge>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            View and manage personnel available for complaint assignment.
+            Manage administrators and staff responsible for campus operations.
           </p>
         </div>
 
         <Button
           variant="outline"
-          onClick={fetchStaff}
+          size="sm"
+          onClick={fetchDirectory}
           disabled={loading}
           className="gap-2"
         >
@@ -165,50 +187,58 @@ export default function StaffPage() {
         </Button>
       </div>
 
-      {/* Overview Cards */}
+      {/* Overview */}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+
         <OverviewCard
           title="Total Personnel"
-          value={staff.length}
+          value={totalPersonnel}
+          description="All registered personnel"
           icon={<Users className="h-4 w-4" />}
         />
 
         <OverviewCard
           title="Administrators"
-          value={adminCount}
+          value={admins.length}
+          description="System administrators"
           icon={<ShieldCheck className="h-4 w-4" />}
         />
 
         <OverviewCard
           title="Staff Members"
-          value={staffCount}
+          value={staff.length}
+          description="Operational personnel"
           icon={<UserCog className="h-4 w-4" />}
         />
+
       </div>
 
-      {/* Staff Directory */}
+      {/* Directory */}
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="space-y-5">
+
+        {/* Search Toolbar */}
+
+        <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold tracking-tight">
-              All Personnel
+            <h2 className="font-semibold">
+              Personnel Directory
             </h2>
 
-            <p className="text-sm text-muted-foreground">
-              {filteredStaff.length} members found
+            <p className="text-xs text-muted-foreground">
+              {filteredAdmins.length + filteredStaff.length} members displayed
             </p>
           </div>
 
-          <div className="relative w-full sm:w-[280px]">
+          <div className="relative w-full sm:max-w-[300px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
             <Input
-              placeholder="Search by name, email or role..."
+              placeholder="Search name, email or role..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="pl-9"
+              className="h-9 pl-9"
             />
           </div>
         </div>
@@ -218,13 +248,14 @@ export default function StaffPage() {
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
+
             <AlertDescription className="flex items-center justify-between gap-3">
               {error}
 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={fetchStaff}
+                onClick={fetchDirectory}
               >
                 Retry
               </Button>
@@ -235,128 +266,51 @@ export default function StaffPage() {
         {/* Loading */}
 
         {loading ? (
-          <div className="flex min-h-[240px] items-center justify-center rounded-lg border">
+          <div className="flex min-h-[220px] items-center justify-center rounded-lg border">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading staff directory...
+              Loading personnel...
             </div>
-          </div>
-        ) : filteredStaff.length === 0 ? (
-          /* Empty State */
-
-          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-lg border border-dashed px-6 text-center">
-            <div className="mb-4 rounded-full border p-4 text-muted-foreground">
-              {search ? (
-                <Search className="h-6 w-6" />
-              ) : (
-                <Users className="h-6 w-6" />
-              )}
-            </div>
-
-            <h3 className="font-semibold">
-              {search ? "No matching personnel" : "No staff found"}
-            </h3>
-
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-              {search
-                ? "Try searching with a different name, email, or role."
-                : "There are currently no personnel available in the directory."}
-            </p>
-
-            {search && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => setSearch("")}
-              >
-                Clear Search
-              </Button>
-            )}
           </div>
         ) : (
-          /* Staff Cards */
+          <div className="space-y-7">
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredStaff.map((member) => {
-              const isAdmin =
-                member.role?.toLowerCase() === "admin";
+            {/* Administrators */}
 
-              return (
-                <Card
-                  key={member.id}
-                  className="gap-4 py-5 transition-colors hover:border-primary/30"
-                >
-                  <CardContent className="space-y-5 px-5">
-                    {/* Profile */}
+            <PersonnelSection
+              title="Administrators"
+              description="People with administrative access to the platform."
+              count={filteredAdmins.length}
+              icon={<ShieldCheck className="h-4 w-4" />}
+              emptyMessage="No administrators found."
+            >
+              {filteredAdmins.map((admin) => (
+                <PersonnelCard
+                  key={`admin-${admin.id}`}
+                  member={admin}
+                  type="admin"
+                />
+              ))}
+            </PersonnelSection>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border bg-muted text-sm font-semibold">
-                        {getInitials(member.name)}
-                      </div>
+            {/* Staff */}
 
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-semibold">
-                          {member.name}
-                        </h3>
+            <PersonnelSection
+              title="Staff Members"
+              description="Personnel available for campus complaint operations."
+              count={filteredStaff.length}
+              icon={<Users className="h-4 w-4" />}
+              emptyMessage="No staff members found."
+            >
+              {filteredStaff.map((member) => (
+                <PersonnelCard
+                  key={`staff-${member.id}`}
+                  member={member}
+                  type="staff"
+                />
+              ))}
+            </PersonnelSection>
 
-                        <p className="truncate text-sm text-muted-foreground">
-                          {getRoleLabel(member.role)}
-                        </p>
-                      </div>
-
-                      <Badge variant="outline">
-                        {isAdmin ? "Admin" : "Staff"}
-                      </Badge>
-                    </div>
-
-                    {/* Divider */}
-
-                    <div className="border-t" />
-
-                    {/* Email */}
-
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-md border p-2 text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">
-                          Email Address
-                        </p>
-
-                        <p className="truncate text-sm font-medium">
-                          {member.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Role */}
-
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-md border p-2 text-muted-foreground">
-                        {isAdmin ? (
-                          <ShieldCheck className="h-4 w-4" />
-                        ) : (
-                          <UserRound className="h-4 w-4" />
-                        )}
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Account Role
-                        </p>
-
-                        <p className="text-sm font-medium">
-                          {getRoleLabel(member.role)}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
           </div>
         )}
       </section>
@@ -371,15 +325,17 @@ export default function StaffPage() {
 function OverviewCard({
   title,
   value,
+  description,
   icon,
 }: {
   title: string;
   value: number;
+  description: string;
   icon: React.ReactNode;
 }) {
   return (
-    <Card className="gap-3 py-5">
-      <CardContent className="flex items-center justify-between px-5">
+    <Card className="gap-2 py-4">
+      <CardContent className="flex items-center justify-between px-4">
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">
             {title}
@@ -388,11 +344,155 @@ function OverviewCard({
           <p className="text-2xl font-semibold tracking-tight">
             {value}
           </p>
+
+          <p className="text-xs text-muted-foreground">
+            {description}
+          </p>
         </div>
 
         <div className="rounded-md border p-2 text-muted-foreground">
           {icon}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --------------------------------------------------
+// Personnel Section
+// --------------------------------------------------
+
+function PersonnelSection({
+  title,
+  description,
+  count,
+  icon,
+  emptyMessage,
+  children,
+}: {
+  title: string;
+  description: string;
+  count: number;
+  icon: React.ReactNode;
+  emptyMessage: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-3">
+
+      {/* Section Header */}
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="rounded-md border p-2 text-muted-foreground">
+            {icon}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold">
+              {title}
+            </h3>
+
+            <p className="text-xs text-muted-foreground">
+              {description}
+            </p>
+          </div>
+        </div>
+
+        <Badge variant="secondary">
+          {count}
+        </Badge>
+      </div>
+
+      {/* Members */}
+
+      {count === 0 ? (
+        <div className="rounded-lg border border-dashed px-4 py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            {emptyMessage}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --------------------------------------------------
+// Personnel Card
+// --------------------------------------------------
+
+function PersonnelCard({
+  member,
+  type,
+}: {
+  member: StaffMember | Admin;
+  type: "admin" | "staff";
+}) {
+  const isAdmin = type === "admin";
+
+  return (
+    <Card className="gap-0 py-0 transition-colors hover:border-primary/30">
+      <CardContent className="p-4">
+
+        <div className="flex items-center gap-3">
+
+          {/* Avatar */}
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-muted text-sm font-semibold">
+            {getInitials(member.name)}
+          </div>
+
+          {/* Name and Role */}
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">
+              {member.name}
+            </p>
+
+            <p className="truncate text-xs text-muted-foreground">
+              {getRoleLabel(member.role)}
+            </p>
+          </div>
+
+          {/* Role Badge */}
+
+          <Badge variant="outline" className="shrink-0">
+            {isAdmin ? "Admin" : "Staff"}
+          </Badge>
+        </div>
+
+        {/* Divider */}
+
+        <div className="my-3 border-t" />
+
+        {/* Email */}
+
+        <div className="flex min-w-0 items-center gap-2 text-sm">
+          <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+
+          <span className="truncate text-muted-foreground">
+            {member.email}
+          </span>
+        </div>
+
+        {/* Account Type */}
+
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          {isAdmin ? (
+            <ShieldCheck className="h-3.5 w-3.5" />
+          ) : (
+            <Building2 className="h-3.5 w-3.5" />
+          )}
+
+          {isAdmin
+            ? "Administrative account"
+            : "Staff account"}
+        </div>
+
       </CardContent>
     </Card>
   );

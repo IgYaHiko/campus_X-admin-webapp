@@ -70,7 +70,7 @@ export function DashboardNavbar() {
     "Dashboard";
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
+    <header className="sticky top-0 z-20 flex h-18 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
 
       {/* Left: Sidebar and Page Information */}
       <div className="flex min-w-0 items-center gap-3">

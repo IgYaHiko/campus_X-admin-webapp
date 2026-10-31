@@ -11,6 +11,7 @@ import {
   Users,
   Settings,
   LogOut,
+  Building,
 } from "lucide-react";
 
 import { useAuth } from "@/context/authContext";
@@ -52,6 +53,11 @@ const navigation = [
     url: "/admin/staff",
     icon: Users,
   },
+  {
+    title: "Department",
+    url: "/admin/department",
+    icon: Building
+  }
 ];
 
 const accountNavigation = [
