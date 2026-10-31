@@ -74,13 +74,13 @@ export function DashboardNavbar() {
 
       {/* Left: Sidebar and Page Information */}
       <div className="flex min-w-0 items-center gap-3">
-        <SidebarTrigger />
+      
 
-        <Separator orientation="vertical" className="h-6" />
+      
 
         <div className="min-w-0">
           <p className="truncate text-xs text-muted-foreground">
-            CampusX / Administration
+            SaySo / Administration
           </p>
 
           <h2 className="truncate text-sm font-semibold tracking-tight">
